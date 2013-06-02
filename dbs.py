@@ -34,7 +34,10 @@ class ram_db(db):
         self.d[key] = obj
 
     def clear(self, key):
-        del self.d[key]
+        try:
+            del self.d[key]
+        except KeyError:
+            pass
 
 class pickle_db(db):
     """
@@ -84,7 +87,7 @@ class pretty_print_db(db):
     def set(self, key, obj):
         loc = self.get_file_name(key)
         f = open(loc, 'w')
-        f.write(self.pretty_printer_f(obj)
+        f.write(self.pretty_printer_f(obj))
     
     def clear(self, key):
         loc = self.get_file_name(key)

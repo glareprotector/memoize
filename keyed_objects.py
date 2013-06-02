@@ -1,4 +1,5 @@
 import functools
+import pdb
 
 class keyed_object(object):
 
@@ -8,18 +9,30 @@ class keyed_object(object):
         """
         try:
             return obj.get_key()
-        except:
-            return obj.__hash__()
+        except AttributeError:
+            pass
+        try:
+            return obj.__name__
+        except AttributeError:
+            pass
+        try:
+            return str(obj)
+        except AttributeError:
+            raise Exception
 
     def get_key(self):
         raise NotImplementedError
 
-class keyed_partial(functools.partial):
+class keyed_partial(functools.partial, keyed_object):
 
     def get_key(self):
-        args_keys = map(self.get_object_key, *args)
-        kwargs_keys = [(arg_name, self.get_object_key(arg)) for arg_name, arg in **kwargs.iteritems()]
-        key = tuple([self.get_interval_key(self.func) + ]args_keys + kwargs_keys)
+        pdb.set_trace()
+        args_keys = map(self.get_internal_key, self.args)
+        try:
+            kwargs_keys = [(arg_name, self.get_internal_key(arg)) for arg_name, arg in self.keywords.iteritems()]
+        except AttributeError:
+            kwargs_keys = []
+        key = tuple([self.get_internal_key(self.func)] + args_keys + kwargs_keys)
         return key
 
 class keyed_func(object):
