@@ -12,7 +12,9 @@ add_2_f = keyed_objects.keyed_partial(operator.add,2)
 
 false_recalculate_determiner = lambda key, db: False
 true_cache_determiner = lambda key,db: True
-dbs = [dbs.ram_db()]
+pickle_location_f = lambda key: ''
+
+dbs = [dbs.pickle_db(pickle_location_f)]
 
 memoized_map = memoize.memoizing_dec(dbs, false_recalculate_determiner, true_cache_determiner)(map)
 

@@ -39,6 +39,7 @@ class ram_db(db):
         except KeyError:
             pass
 
+
 class pickle_db(db):
     """
     can handle any pickleable object
@@ -62,7 +63,10 @@ class pickle_db(db):
     
     def clear(self, key):
         loc = self.get_file_name(key)
-        os.remove(loc)
+        try:
+            os.remove(loc)
+        except OSError:
+            passz
 
 class pretty_print_db(db):
     """
