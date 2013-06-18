@@ -1,8 +1,18 @@
 import functools
 import pdb
 
+"""
+separate get_key from memoized_f. memoized_f doesn't necessarily need to implement get_key, and a memoized_f doesn't necessarily need to implement get_key
+how to create a keyed object?
+- what if 
+"""
+
+
 class keyed_object(object):
 
+    """
+    this is used by 
+    """
     def get_internal_key(self, obj):
         """
         takes in any object, and returns the internal key it will use for itself.
@@ -26,7 +36,7 @@ class keyed_object(object):
 class keyed_partial(functools.partial, keyed_object):
 
     def get_key(self):
-        pdb.set_trace()
+
         args_keys = map(self.get_internal_key, self.args)
         try:
             kwargs_keys = [(arg_name, self.get_internal_key(arg)) for arg_name, arg in self.keywords.iteritems()]
