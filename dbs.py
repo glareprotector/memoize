@@ -3,14 +3,11 @@ import pickle
 
 class db(object):
     """
-    object that stores objects.  decides how it wants to represent objects, since different db will have different ways.  eg, a dictionary can store objects, but a db that writes stuff to file can only store strings
+    abstract class
     assume db are just key to value mappings
     """
 
     def get(self, key):
-        raise NotImplementedError
-
-    def get_obj_repr(self, obj):
         raise NotImplementedError
 
     def set(self, key, obj):
@@ -43,30 +40,32 @@ class ram_db(db):
 class pickle_db(db):
     """
     can handle any pickleable object
+    get_pickle_file_location_f should take in a key, and output absolute location to store pickle
     """
-    def __init__(self, get_pickle_location_f):
-        self.get_pickle_location_f = get_pickle_location_f
+    def __init__(self, get_pickle_file_location_f):
+        self.get_pickle_file_location_f = get_pickle_file_location_f
 
-    def get_file_name(self, key):
-        return self.get_pickle_location_f(key) + repr(key) + '.pickle'
 
     def get(self, key):
-        loc = self.get_file_name(key)
+        loc = self.get_pickle_file_location(key)
         if not os.path.exists(loc):
             raise KeyError
         else:
             return pickle.load(open(loc,'rb'))
 
     def set(self, key, obj):
-        loc = self.get_file_name(key)
+        loc = self.get_pickle_file_location(key)
+        folder = os.path.dirname(loc)
+        if not os.path.exists(folder):
+            os.makedirs(folder)
         pickle.dump(obj, open(loc,'wb'))
     
     def clear(self, key):
-        loc = self.get_file_name(key)
+        loc = self.get_pickle_file_location(key)
         try:
             os.remove(loc)
         except OSError:
-            passz
+            pass
 
 class pretty_print_db(db):
     """
