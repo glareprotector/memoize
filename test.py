@@ -20,6 +20,9 @@ class asdf(object):
         print x
 
 
+def g(a,*args,**kwargs):
+    print a, args, kwargs
+
 asdf2 = functools.partial(asdf,a=2,b=3)
 
 gg = asdf(4,5)
