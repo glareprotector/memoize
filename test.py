@@ -4,9 +4,26 @@ import keyed_objects
 import operator
 import pdb
 import functools
+import playground
 """
 test case: f1: applies input f to all elements of input list.  f2: partial that adds 2
 """
+
+true_recalculate_determiner_f = lambda key, dbs: True
+false_recalculate_determiner_f = lambda key, dbs: False
+
+@memoize.memoizing_dec(dbs=[dbs.ram_db(),dbs.default_int_db()], recalculate_determiner_f=false_recalculate_determiner_f, get_cache_key_f = playground.default_get_function_like_key_f)
+@keyed_objects.default_keyed_func_dec()
+def fxn(x):
+    print x
+    if x <= 0:
+        return x
+    else:
+        return fxn(x=x-1) + 1
+
+print fxn(x=10)
+print fxn(x=14)
+
 
 class asdf(object):
 

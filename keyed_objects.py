@@ -16,22 +16,40 @@ class keyed_object(object):
         raise NotImplementedError
 
 class keyed_partial(partial, keyed_object):
-
-    def __init__(self, f, get_key_f):
+    """
+    will be created directly
+    """
+    def __init__(self, f, get_key_f, **kwargs):
         self.get_key_f = get_key_f
-        partial.__init__(self, f, get_key_f)
+        partial.__init__(self, f, **kwargs)
 
     def get_key(self):
-        assert self.args = []
+        assert self.args == ()
         return self.get_function_like_key(self.func, self.keywords)
 
-class keyed_func(object):
+default_keyed_partial = partial(keyed_partial, get_key_f=playground.default_get_function_like_key_f)
 
+class keyed_func(object):
+    """
+    will usually be created via decorator
+    """
     def __init__(self, f, get_key_f):
         self.f, self.get_key_f = f, get_key_f
 
     def __call__(self, *args, **kwargs):
-        self.f(*args, **kwargs)
+        return self.f(*args, **kwargs)
 
     def get_key(self):
         return self.get_key_f(self.f)
+
+class keyed_func_dec(object):
+    """
+    decorator with arguments for creating keyed_func
+    """
+    def __init__(self, get_key_f):
+        self.get_key_f = get_key_f
+
+    def __call__(self, f):
+        return keyed_func(f, self.get_key_f)
+
+default_keyed_func_dec = partial(keyed_func_dec, get_key_f=playground.default_get_internal_key_f)

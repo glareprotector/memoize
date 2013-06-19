@@ -1,5 +1,7 @@
 import os
 import pickle
+from functools import *
+import pdb
 
 class db(object):
     """
@@ -16,6 +18,9 @@ class db(object):
     def clear(self, key):
         raise NotImplementedError
 
+    def set_this_run(self, key):
+        raise NotImplementedError
+
 class ram_db(db):
     """
     nothing more than a dictionary
@@ -23,12 +28,18 @@ class ram_db(db):
 
     def __init__(self):
         self.d = {}
+        self.setted = set()
 
     def get(self, key):
+        print self.d
         return self.d[key]
 
     def set(self, key, obj):
         self.d[key] = obj
+        self.setted.add(key)
+
+    def set_this_run(self, key):
+        return key in self.setted
 
     def clear(self, key):
         try:
@@ -37,61 +48,79 @@ class ram_db(db):
             pass
 
 
-class pickle_db(db):
+class file_db(db):
     """
-    can handle any pickleable object
-    get_pickle_file_location_f should take in a key, and output absolute location to store pickle
+    writer_f: given file and object, writes to the file
+    reader_f: given file, returns the object
+    get_file_location_f: given key, returns full file path
     """
-    def __init__(self, get_pickle_file_location_f):
-        self.get_pickle_file_location_f = get_pickle_file_location_f
-
+    def __init__(self, get_file_location_f, printer_f, reader_f):
+        self.get_file_location_f, self.printer_f, self.reader_f = get_file_location_f, printer_f, reader_f
+        self.setted = set()
 
     def get(self, key):
-        loc = self.get_pickle_file_location(key)
+        loc = self.get_file_location_f(key=key)
+        folder = os.path.dirname(loc)
         if not os.path.exists(loc):
             raise KeyError
         else:
-            return pickle.load(open(loc,'rb'))
+            if self.reader_f == None:
+                raise NotImplementedError
+            else:
+                return self.reader_f(loc=loc)
 
     def set(self, key, obj):
-        loc = self.get_pickle_file_location(key)
+        loc = self.get_file_location_f(key=key)
         folder = os.path.dirname(loc)
         if not os.path.exists(folder):
             os.makedirs(folder)
-        pickle.dump(obj, open(loc,'wb'))
+        self.printer_f(loc=loc, obj=obj)
+        self.setted.add(key)
+
+    def set_this_run(self, key):
+        return key in self.setted
     
     def clear(self, key):
-        loc = self.get_pickle_file_location(key)
+        loc = self.get_file_location_f(key=key)
         try:
             os.remove(loc)
-        except OSError:
+        except Exception:
             pass
 
-class pretty_print_db(db):
-    """
-    only handles whatever pretty_printer and pretty_reader functions handle
-    """
-    def __init__(self, get_pickle_location_f, pretty_printer_f, pretty_reader_f):
-        self.get_pickle_location_f, self.pretty_printer_f, self.pretty_reader_f = get_pickle_location_f, pretty_printer_f, pretty_reader_f
+def get_file_location_f(get_folder_f, get_name_f, key):
+    return get_folder_f(key=key) + get_name_f(key=key)
 
-    def get_file_name(self, key):
-        return self.get_pickle_location_f(key) + repr(key) + '.pretty'
+def default_get_name_f(key):
+    return str(key)
 
-    def get(self, key):
-        loc = self.get_file_name(key)
-        if not os.path.exists(loc):
-            raise KeyError
-        else:
-            if self.pretty_reader_f == None:
-                raise NotImplementedError
-            else:
-                return self.pretty_reader_f(loc)
+def default_get_folder_f(key):
+    return 'dump/'
 
-    def set(self, key, obj):
-        loc = self.get_file_name(key)
-        f = open(loc, 'w')
-        f.write(self.pretty_printer_f(obj))
-    
-    def clear(self, key):
-        loc = self.get_file_name(key)
-        os.remove(loc)
+get_file_location_f_default_get_name = partial(get_file_location_f, get_name_f = default_get_name_f)
+
+default_get_file_location_f = partial(get_file_location_f_default_get_name, get_folder_f=default_get_folder_f)
+
+def pickle_printer_f(loc, obj):
+    pickle.dump(obj, open(loc, 'wb'))
+
+def pickle_reader_f(loc):
+    return pickle.load(open(loc,'rb'))
+
+pickle_db = partial(file_db, printer_f=pickle_printer_f, reader_f=pickle_reader_f)
+
+a_pickle_db = partial(pickle_db, get_file_location_f=partial(get_file_location_f_default_get_name, get_folder_f=lambda key: './'))
+
+default_pickle_db = partial(pickle_db, get_file_location_f=default_get_file_location_f)
+
+def int_printer_f(loc, obj):
+    f = open(loc, 'w')
+    f.write(str(obj))
+    f.close()
+
+def int_reader_f(loc):
+    f = open(loc, 'r')
+    return int(f.next().strip())
+
+int_db = partial(file_db, printer_f=int_printer_f, reader_f=int_reader_f)
+
+default_int_db = partial(int_db, get_file_location_f=default_get_file_location_f)
